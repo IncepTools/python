@@ -25,11 +25,11 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv python install 3.12
@@ -75,8 +75,8 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv python install 3.12
 
       - name: Build the wheel and sdist
@@ -100,11 +100,11 @@ jobs:
             cyclonedx-py requirements --output-format json --outfile dist/sbom.json
 
       - name: Build provenance attestation
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: "dist/*.whl"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: release-dist
           path: dist/
@@ -124,7 +124,7 @@ jobs:
       # environment.
       id-token: write
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           name: release-dist
           path: dist/
@@ -143,8 +143,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v6
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: release-dist
           path: dist/
@@ -162,7 +162,7 @@ jobs:
           print((match.group(1) if match else "").strip() or f"See CHANGELOG.md for {version}.")
           PY
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           body_path: release-notes.md
           files: dist/*

@@ -76,7 +76,10 @@ export it.
 ## Commits and pull requests
 
 Commit subjects are `<type>: <description>` using `feat:`, `fix:`, `docs:`,
-`test:`, `refactor:`, `perf:`, `build:` or `chore:`.
+`test:`, `refactor:`, `perf:`, `build:`, `ci:`, `style:`, `chore:` or
+`revert:`. The subject starts lower-case and does not end with a full stop —
+it becomes a commit subject, not a sentence. A pull request title is checked
+against the same list, because it becomes the squashed commit subject.
 
 A pull request should say what failure it addresses, what you changed, and how
 you verified it. If it changes behaviour, update the guide under `docs/` and

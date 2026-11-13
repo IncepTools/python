@@ -1,51 +1,26 @@
 name: pull request
 
+# Everything here needs the base branch's trust or a write token, so it
+# runs on `pull_request_target`. The title check does not, and lives in
+# pr-title.yml where a change to it can be tested by the pull request
+# that makes it.
 on:
   pull_request_target:
-    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
 
 jobs:
-  title:
-    name: conventional title
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    steps:
-      # The title becomes the squashed commit subject and the changelog draft,
-      # so it is worth one check rather than a habit of fixing it afterwards.
-      - uses: amannn/action-semantic-pull-request@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            test
-            refactor
-            perf
-            build
-            chore
-            revert
-          requireScope: false
-          subjectPattern: ^(?![A-Z])(?!.*\.$).+$
-          subjectPatternError: |
-            The subject "{subject}" must start lower-case and not end with a
-            full stop — it is a commit subject, not a sentence.
-
   dependencies:
     name: dependency review
-    if: github.event.action != 'edited'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: moderate
           comment-summary-in-pr: on-failure
@@ -59,6 +34,6 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/labeler@v6
+      - uses: actions/labeler@v7
         with:
           sync-labels: true

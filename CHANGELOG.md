@@ -9,7 +9,26 @@ appears under **Changed** with what to do about it.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Every GitHub Actions reference now points at a published tag. `scorecard`
+  referenced a major tag that was never published and failed on its first run;
+  `setup-uv` stopped publishing floating major tags after v7, so it is pinned
+  to an exact release.
+
+### Added
+
+- `scripts/check_workflows.py --online` asks GitHub whether every `uses:` ref
+  actually exists, and CI runs it. A ref can be perfectly well-formed and have
+  never been published, which is the one failure the offline checks cannot
+  see.
+- `ci` and `style` are accepted commit types. They are part of Conventional
+  Commits and were being used already, but the pull request title check
+  rejected them.
+- The pull request title check runs on `pull_request` rather than
+  `pull_request_target`, so it executes the pull request's own copy. On
+  `pull_request_target` it ran the base branch's version, which meant a
+  wrong list of accepted types could never be corrected by a pull request.
 
 ## [0.1.0] — 2026-11-13
 

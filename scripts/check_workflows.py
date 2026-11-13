@@ -10,15 +10,24 @@ wrong in practice:
 * every ``uses`` is pinned to a major version or a SHA, never a branch;
 * the workflow declares ``permissions``, so it does not inherit write-all.
 
+With ``--online`` it additionally asks GitHub whether every ``uses:`` ref
+actually exists. That is the one failure the offline checks cannot see: a ref
+can be perfectly well-formed and still have never been published, and the
+workflow then fails on the push that introduces it rather than in review.
+
 If ``actionlint`` is on the PATH it runs that too, which catches a great deal
 more.
 """
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +116,61 @@ def check(path: Path) -> list[str]:
     return problems
 
 
+def _ref_exists(action: str, ref: str) -> bool:
+    """Does ``owner/repo@ref`` name something that was actually published?"""
+    owner_repo = "/".join(action.split("/")[:2])
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "inceptools-ci"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    for kind in ("tags", "heads"):
+        url = f"https://api.github.com/repos/{owner_repo}/git/ref/{kind}/{ref}"
+        request = urllib.request.Request(url, headers=headers)  # noqa: S310
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:  # noqa: S310
+                if response.status == 200:
+                    return True
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                continue
+            if exc.code in (403, 429):
+                # Rate limited and unauthenticated. Better to say nothing than
+                # to fail a build over somebody else's quota.
+                print(f"  rate limited while checking {action}@{ref}", file=sys.stderr)
+                return True
+            raise
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+            print(f"  could not reach GitHub for {action}@{ref}", file=sys.stderr)
+            return True
+    return False
+
+
+def check_refs_online(files: list[Path]) -> list[str]:
+    """Every `uses:` ref resolves to a real tag or branch."""
+    seen: set[str] = set()
+    for path in files:
+        document = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        for job in (document.get("jobs") or {}).values():
+            if not isinstance(job, dict):
+                continue
+            for step in job.get("steps") or []:
+                if isinstance(step, dict) and "uses" in step:
+                    seen.add(str(step["uses"]))
+
+    problems: list[str] = []
+    for uses in sorted(seen):
+        if uses.startswith(("./", "docker://")) or "@" not in uses:
+            continue
+        action, ref = uses.rsplit("@", 1)
+        if not _ref_exists(action, ref):
+            problems.append(
+                f"{uses} does not exist — no such tag or branch. "
+                "A well-formed ref is not necessarily a published one."
+            )
+    return problems
+
+
 def main() -> int:
     if not WORKFLOWS.is_dir():
         print("no workflows to check")
@@ -114,6 +178,10 @@ def main() -> int:
 
     files = sorted(WORKFLOWS.glob("*.yml")) + sorted(WORKFLOWS.glob("*.yaml"))
     problems = [problem for path in files for problem in check(path)]
+
+    if "--online" in sys.argv:
+        print("checking that every action ref exists")
+        problems.extend(check_refs_online(files))
 
     for path in sorted(ROOT.glob(".github/*.yml")):
         try:
@@ -135,7 +203,8 @@ def main() -> int:
     if problems:
         print(f"\n{len(problems)} workflow problem(s)", file=sys.stderr)
         return 1
-    print(f"{len(files)} workflow(s) look sound")
+    checked = "offline" if "--online" not in sys.argv else "offline and online"
+    print(f"{len(files)} workflow(s) look sound ({checked})")
     return 0
 
 
