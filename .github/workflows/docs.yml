@@ -29,7 +29,7 @@ jobs:
       # A docs site that silently drops a page is worse than one that fails.
       - run: uv run --group docs mkdocs build --strict
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         if: github.ref == 'refs/heads/main'
         with:
           path: site
