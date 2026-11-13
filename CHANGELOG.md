@@ -25,6 +25,10 @@ appears under **Changed** with what to do about it.
 - `ci` and `style` are accepted commit types. They are part of Conventional
   Commits and were being used already, but the pull request title check
   rejected them.
+- The pull request title check runs on `pull_request` rather than
+  `pull_request_target`, so it executes the pull request's own copy. On
+  `pull_request_target` it ran the base branch's version, which meant a
+  wrong list of accepted types could never be corrected by a pull request.
 
 ## [0.1.0] — 2026-11-13
 
