@@ -9,7 +9,19 @@ appears under **Changed** with what to do about it.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- Every GitHub Actions reference now points at a published tag. `scorecard`
+  referenced a major tag that was never published and failed on its first run;
+  `setup-uv` stopped publishing floating major tags after v7, so it is pinned
+  to an exact release.
+
+### Added
+
+- `scripts/check_workflows.py --online` asks GitHub whether every `uses:` ref
+  actually exists, and CI runs it. A ref can be perfectly well-formed and have
+  never been published, which is the one failure the offline checks cannot
+  see.
 
 ## [0.1.0] — 2026-11-13
 

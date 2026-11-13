@@ -10,8 +10,13 @@ ALL := src tests examples
 
 .DEFAULT_GOAL := help
 .PHONY: help install test test-fast test-matrix cov lint format format-check types check ci \
-        docs docs-links docs-serve workflows build clean audit outdated \
-        example-minimal example-todo example-worker routes pre-commit
+        docs docs-links docs-serve workflows workflows-online build clean \
+        audit outdated example-minimal example-todo example-worker routes \
+        pre-commit
+
+# An authenticated call gets a far higher API rate limit; the check degrades
+# to a pass rather than a failure when neither is available.
+GH_TOKEN ?= $(shell gh auth token 2>/dev/null)
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -59,6 +64,9 @@ docs-serve: ## Serve the documentation site with live reload
 
 workflows: ## Lint the GitHub Actions workflows
 	@$(RUN) python scripts/check_workflows.py
+
+workflows-online: ## Also check that every action ref was actually published
+	@GITHUB_TOKEN="$(GH_TOKEN)" $(RUN) python scripts/check_workflows.py --online
 
 check: lint format-check types workflows ## Every static check
 

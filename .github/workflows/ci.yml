@@ -22,10 +22,10 @@ jobs:
     name: lint and types
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
@@ -43,14 +43,19 @@ jobs:
           bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
           echo "$PWD" >> "$GITHUB_PATH"
 
-      - run: uv run python scripts/check_workflows.py
+      # --online asks GitHub whether every `uses:` ref was actually
+      # published. A ref can be well-formed and have never existed, and
+      # that only shows up when the workflow runs.
+      - run: uv run python scripts/check_workflows.py --online
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
     name: coverage floor
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv python install 3.12
@@ -75,10 +80,10 @@ jobs:
           - python: "3.15"
             experimental: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
@@ -91,7 +96,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.python == '3.13'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.xml
@@ -101,8 +106,8 @@ jobs:
     name: examples stay runnable
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv python install 3.12
@@ -121,8 +126,8 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uv python install 3.12
       - run: uv build
 
@@ -131,7 +136,7 @@ jobs:
           uv run --isolated --no-project --with dist/*.whl \
             python -c "import inceptools; print(inceptools.VERSION)"
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
