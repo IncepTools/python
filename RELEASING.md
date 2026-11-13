@@ -81,18 +81,31 @@ After 1.0, no exported identifier changes incompatibly within a major version.
 - Anything under a `_private` name.
 - Tightening a type annotation that was wider than the implementation.
 
-## Required repository settings
+## Repository settings
 
-These are the parts an automation cannot create for itself:
+Already configured:
 
-- **PyPI trusted publisher** for `inceptools`, pointing at this repository,
-  workflow `release.yml`, environment `pypi`.
-- A **`pypi` environment** with required reviewers, so a publish is a
-  deliberate act rather than a consequence of a pushed tag.
+- **`pypi` environment** with a required reviewer and deployments restricted
+  to `v*` tags, so a publish is a deliberate act rather than a consequence of
+  a pushed tag.
 - **`github-pages` environment** for the docs deploy.
-- **Branch protection on `main`**: require the `ci` checks, require a review,
-  no force pushes.
-- **Actions** permitted to create releases and write to Pages.
+- **Branch protection on `main`**: the `ci` checks and the title check are
+  required and must be up to date, history is linear, force pushes and
+  deletions are refused, and conversations must be resolved.
+- **A tag ruleset** making `v*` immutable — no deletion, no rewriting.
+- **Actions** restricted to GitHub-owned, verified, and the six third-party
+  actions this repository actually uses; the default workflow token is
+  read-only and each workflow declares the permissions it needs.
+
+One thing remains, and only a person with the PyPI account can do it:
+
+- **Register the trusted publisher** at
+  <https://pypi.org/manage/account/publishing/> for the project `inceptools`,
+  pointing at owner `IncepTools`, repository `python`, workflow
+  `release.yml`, environment `pypi`.
+
+Until that exists the `publish` job will fail, which is the correct outcome:
+the alternative is an API token living in repository secrets.
 
 ## After a release
 
