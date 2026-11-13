@@ -1,0 +1,138 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: "1"
+  UV_FROZEN: "0"
+
+jobs:
+  static:
+    name: lint and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+
+      - run: uv run ruff check src tests examples
+      - run: uv run ruff format --check src tests examples
+      - run: uv run mypy
+      - run: uv run python scripts/check_links.py
+
+      - name: Install actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          echo "$PWD" >> "$GITHUB_PATH"
+
+      - run: uv run python scripts/check_workflows.py
+
+  coverage:
+    name: coverage floor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+
+      # The floor lives in pyproject.toml so `make cov` and CI agree.
+      - run: uv run pytest --cov=inceptools --cov-report=term-missing
+
+  test:
+    name: tests (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    # A release candidate breaking is advance notice, not a broken build.
+    continue-on-error: ${{ matrix.experimental || false }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor, a middle and the newest release. A version-specific break
+        # is usually at one of those — `get_origin` on `X | None` changed
+        # between 3.13 and 3.14, and only the floor caught it.
+        python: ["3.11", "3.13", "3.14"]
+        include:
+          - python: "3.15"
+            experimental: true
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - run: uv python install ${{ matrix.python }}
+      - run: uv sync --all-extras
+
+      - name: Run the suite
+        run: uv run pytest --cov=inceptools --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage
+        if: matrix.python == '3.13'
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage
+          path: coverage.xml
+          if-no-files-found: error
+
+  examples:
+    name: examples stay runnable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+
+      # Documentation that lies is worse than no documentation.
+      - run: uv run pytest tests/app/test_examples.py -q
+
+      - name: Every mutating route is guarded
+        run: |
+          for example in minimal todo worker; do
+            PYTHONPATH="examples/$example" uv run python -m inceptools routes main:app --unguarded
+          done
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - run: uv python install 3.12
+      - run: uv build
+
+      - name: The wheel imports on a clean interpreter
+        run: |
+          uv run --isolated --no-project --with dist/*.whl \
+            python -c "import inceptools; print(inceptools.VERSION)"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error

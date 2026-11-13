@@ -1,0 +1,49 @@
+name: Capability request
+description: Propose something the framework should do.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This framework is organised around failure modes. A request earns its
+        place by naming something that currently goes wrong — so please start
+        there rather than with the API you have in mind.
+
+        Check [ROADMAP.md](../blob/main/ROADMAP.md) first; it may already be
+        listed, or listed as a deliberate non-goal.
+
+  - type: textarea
+    id: failure
+    attributes:
+      label: What goes wrong today?
+      description: >
+        The concrete failure, not the missing feature. "Two replicas both run
+        the nightly job and the customer is emailed twice."
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: What are you doing instead?
+      description: And why it is not good enough.
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: What might it look like?
+      description: Optional. A sketch is fine; it does not have to be right.
+      render: python
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where would it belong?
+      options:
+        - core (every consumer gets it)
+        - an optional extra
+        - not sure
+    validations:
+      required: true

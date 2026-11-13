@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/IncepTools/python/discussions/categories/q-a
+    about: How do I …? Ask here; it is usually answered faster than an issue.
+  - name: Idea
+    url: https://github.com/IncepTools/python/discussions/categories/ideas
+    about: Propose a capability. Describe the failure it prevents.
+  - name: Security vulnerability
+    url: https://github.com/IncepTools/python/security/advisories/new
+    about: Report privately. Please do not open a public issue.

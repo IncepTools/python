@@ -1,0 +1,43 @@
+name: stale
+
+# Closing an issue nobody can act on is kinder than leaving it open for two
+# years. Anything labelled `pinned`, `security` or `roadmap` is exempt, and a
+# closed issue can always be reopened with new information.
+
+on:
+  schedule:
+    - cron: "0 9 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v10
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          exempt-issue-labels: "pinned,security,roadmap,good first issue,canary"
+          exempt-pr-labels: "pinned,security,work in progress"
+          stale-issue-label: "stale"
+          stale-pr-label: "stale"
+          stale-issue-message: >
+            This has had no activity for 60 days. If it still matters, a note
+            saying so keeps it open — ideally with what you tried since. It
+            will close in 14 days otherwise, and reopening it is one click.
+          stale-pr-message: >
+            This pull request has had no activity for 60 days. If it is still
+            wanted, rebase it or say what it is waiting on. It will close in
+            14 days otherwise.
+          close-issue-message: >
+            Closing for inactivity. This is not a judgement on the report —
+            reopen it with any new detail and it will be looked at.
+          close-pr-message: >
+            Closing for inactivity. The branch is still there; reopen when you
+            want to pick it up.

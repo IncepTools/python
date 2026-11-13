@@ -1,0 +1,170 @@
+name: release
+
+# A tag is the trigger, but the tag is not trusted: the job checks that the
+# tag, pyproject.toml and inceptools.VERSION agree before anything is built.
+# A release whose three version records disagree ships a wheel that misreports
+# itself on every health endpoint.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Build and verify, publish nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --all-extras
+
+      - name: The tag, the package and the runtime agree
+        id: version
+        run: |
+          set -euo pipefail
+          project="$(uv run python -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          runtime="$(uv run python -c 'import inceptools; print(inceptools.VERSION)')"
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${GITHUB_REF_NAME#v}"
+          else
+            tag="$project"
+          fi
+
+          echo "tag=$tag pyproject=$project runtime=$runtime"
+          if [ "$tag" != "$project" ] || [ "$project" != "$runtime" ]; then
+            echo "::error::version mismatch — tag=$tag pyproject=$project VERSION=$runtime"
+            exit 1
+          fi
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: The changelog has a section for this version
+        if: github.event_name == 'push'
+        run: |
+          grep -q "## \[${{ steps.version.outputs.version }}\]" CHANGELOG.md || {
+            echo "::error::CHANGELOG.md has no section for ${{ steps.version.outputs.version }}"
+            exit 1
+          }
+
+      - name: Full check suite
+        run: make ci
+
+  build:
+    name: build, sign and attest
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - run: uv python install 3.12
+
+      - name: Build the wheel and sdist
+        run: uv build
+
+      - name: The wheel imports on a clean interpreter
+        run: |
+          # Catches a packaging mistake that a repo-local import hides: a
+          # module left out of the wheel still imports from the source tree.
+          uv run --isolated --no-project --with dist/*.whl \
+            python -c "import inceptools; print(inceptools.VERSION)"
+
+      - name: Check the distribution metadata
+        run: uv run --with twine twine check --strict dist/*
+
+      - name: Software bill of materials
+        run: |
+          uv run --with cyclonedx-bom \
+            cyclonedx-py environment --output-format json --outfile dist/sbom.json || \
+          uv run --with cyclonedx-bom \
+            cyclonedx-py requirements --output-format json --outfile dist/sbom.json
+
+      - name: Build provenance attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "dist/*.whl"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: publish to PyPI
+    needs: [verify, build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/inceptools
+    permissions:
+      # Trusted publishing: no API token is stored anywhere. The only thing
+      # that can publish is this workflow, on this repository, in this
+      # environment.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Drop the SBOM before upload
+        run: rm -f dist/sbom.json
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+
+  github-release:
+    name: GitHub release
+    needs: [verify, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v6
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Extract this version's changelog section
+        run: |
+          python - <<'PY' > release-notes.md
+          import pathlib, re
+          version = "${{ needs.verify.outputs.version }}"
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          match = re.search(
+              rf"^## \[{re.escape(version)}\].*?$(.*?)(?=^## \[|\Z)",
+              text, re.M | re.S,
+          )
+          print((match.group(1) if match else "").strip() or f"See CHANGELOG.md for {version}.")
+          PY
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: dist/*
+          generate_release_notes: false
+          fail_on_unmatched_files: true

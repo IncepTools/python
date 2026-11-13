@@ -1,0 +1,50 @@
+# Paths to labels. Keeps triage honest without anybody remembering to label.
+"area: di":
+  - changed-files:
+      - any-glob-to-any-file: ["src/inceptools/core/di/**", "src/inceptools/core/module/**"]
+
+"area: http":
+  - changed-files:
+      - any-glob-to-any-file: ["src/inceptools/web/**"]
+
+"area: data":
+  - changed-files:
+      - any-glob-to-any-file: ["src/inceptools/data/**"]
+
+"area: platform":
+  - changed-files:
+      - any-glob-to-any-file: ["src/inceptools/platform/**"]
+
+"area: reliability":
+  - changed-files:
+      - any-glob-to-any-file: ["src/inceptools/reliability/**"]
+
+"area: observability":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/inceptools/core/logx/**"
+          - "src/inceptools/core/telemetry/**"
+          - "src/inceptools/web/health/**"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "**/*.md"]
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ["tests/**"]
+
+examples:
+  - changed-files:
+      - any-glob-to-any-file: ["examples/**"]
+
+"ci/build":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**", "Makefile", "scripts/**", ".pre-commit-config.yaml"]
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: ["pyproject.toml", "uv.lock"]
+
+"breaking change":
+  - head-branch: ["^breaking/", "^!"]

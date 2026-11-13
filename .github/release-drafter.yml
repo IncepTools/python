@@ -1,0 +1,36 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "Added"
+    labels: ["enhancement", "feature"]
+  - title: "Fixed"
+    labels: ["bug"]
+  - title: "Changed"
+    labels: ["breaking change", "refactor"]
+  - title: "Documentation"
+    labels: ["documentation"]
+  - title: "Internal"
+    labels: ["ci/build", "tests", "dependencies", "chore"]
+
+version-resolver:
+  major:
+    labels: ["breaking change"]
+  minor:
+    labels: ["enhancement", "feature"]
+  patch:
+    labels: ["bug", "documentation", "chore", "dependencies"]
+  default: patch
+
+exclude-labels: ["skip-changelog"]
+
+template: |
+  $CHANGES
+
+  **Full diff**: https://github.com/IncepTools/python/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+  The hand-written, reviewed notes are in
+  [CHANGELOG.md](https://github.com/IncepTools/python/blob/main/CHANGELOG.md).
+  This draft is a starting point for them, not a replacement — a changelog
+  that is only a list of merged pull requests tells a reader nothing about
+  what to do differently.

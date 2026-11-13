@@ -1,0 +1,11 @@
+# Review assignment. Everything, for now.
+*                       @ishansingla
+
+# The parts where a mistake is expensive get named explicitly, so a change to
+# one of them cannot be merged on a drive-by review.
+/src/inceptools/data/   @ishansingla
+/src/inceptools/web/guard/      @ishansingla
+/src/inceptools/web/response/   @ishansingla
+/src/inceptools/reliability/    @ishansingla
+/.github/               @ishansingla
+/pyproject.toml         @ishansingla
