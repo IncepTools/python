@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: inceptools
+message: >-
+  If you use this framework in work you publish, please cite it.
+type: software
+authors:
+  - family-names: Singla
+    given-names: Ishan
+repository-code: "https://github.com/IncepTools/python"
+url: "https://inceptools.github.io/python/"
+abstract: >-
+  An opinionated application framework for Python services, on top of FastAPI:
+  modules with enforced encapsulation, typed dependency injection, guards,
+  interceptors, one response envelope, a tenant-scoped data layer, scheduling,
+  locks, idempotency and a transactional outbox.
+keywords:
+  - python
+  - fastapi
+  - framework
+  - dependency-injection
+  - architecture
+license: Apache-2.0
+version: 0.1.0
