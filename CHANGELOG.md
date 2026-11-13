@@ -22,6 +22,9 @@ appears under **Changed** with what to do about it.
   actually exists, and CI runs it. A ref can be perfectly well-formed and have
   never been published, which is the one failure the offline checks cannot
   see.
+- `ci` and `style` are accepted commit types. They are part of Conventional
+  Commits and were being used already, but the pull request title check
+  rejected them.
 
 ## [0.1.0] — 2026-11-13
 
