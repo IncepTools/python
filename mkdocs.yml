@@ -1,0 +1,92 @@
+site_name: inceptools
+site_description: An opinionated application framework for Python services, on top of FastAPI.
+site_url: https://inceptools.github.io/python/
+repo_url: https://github.com/IncepTools/python
+repo_name: IncepTools/python
+edit_uri: edit/main/docs/
+copyright: Apache-2.0
+
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/weather-sunny, name: Light mode }
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc: { permalink: true }
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight: { anchor_linenums: true }
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed: { alternate_style: true }
+
+plugins:
+  - search
+  # A broken internal link fails the build rather than shipping a dead page.
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            members_order: source
+
+validation:
+  links:
+    absolute_links: info
+    unrecognized_links: warn
+
+nav:
+  - Home: README.md
+  - Architecture:
+      - First steps: first-steps.md
+      - Modules: modules.md
+      - Providers and injection: providers.md
+      - Dynamic modules: dynamic-modules.md
+      - Metadata and the Reflector: metadata.md
+  - HTTP:
+      - Controllers and routes: controllers.md
+      - Guards and interceptors: guards.md
+      - Middleware: middleware.md
+      - Errors and the envelope: errors.md
+      - Validation: validation.md
+      - Pipes and parameters: pipes.md
+      - Pagination: pagination.md
+  - Fundamentals:
+      - Configuration: configuration.md
+      - Lifecycle: lifecycle.md
+      - Telemetry: telemetry.md
+      - Health checks: health.md
+      - Testing: testing.md
+  - Data:
+      - The scoped repository: database.md
+      - Idempotency and the outbox: durability.md
+  - Techniques:
+      - Events: events.md
+      - Scheduling: scheduling.md
+      - Queues: queues.md
+      - Caching and locks: caching.md
+      - Resilience: resilience.md
+  - Adopting:
+      - Migrating an existing service: migrating.md
